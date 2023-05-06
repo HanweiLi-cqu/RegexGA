@@ -1,4 +1,3 @@
-import itertools
 import re
 import itertools
 from regexNode import *
@@ -126,7 +125,7 @@ def regex_covers(M:set, U:set)->dict:
         dict: 结果字典
     """
     losers_str = '\n'.join(U)
-    wholes = {'^'+winner+'$' for winner in M} #插入头尾符号
+    wholes = {'^'+winner+'$' for winner in M} #插入头尾符号 foo -> ^foo$
     parts  = {d for w in wholes for p in subparts(w) for d in dotify(p)} # 获得替换成dot的所有可能性
     reps   = {r for p in parts for r in repetitions(p)} # 在子串集合上再进行处理，加入重复字符串集合
     pool   = wholes | parts | pairs(M) | reps # 合并所有的字符串集合,作为可能的正则表达式集合
@@ -309,18 +308,17 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
         concat_node_i = concat_node(
             node(None),node(None)
         )
-        # "foo"
+        # 左边节点
         if random() < charrate:
             concat_node_i.left_concatchildnode =  makerandomtree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
-        # "++"
         elif random() < qualifierate:
             concat_node_i.left_concatchildnode =  makerandomtree(M, U, charnode_pool,qualifiernode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         else:
             concat_node_i.left_concatchildnode = makerandomtree(M, U, charnode_pool,concat_node(None,None), splitrate, concatrate, charrate,
                                     qualifierate, maxdepth, curren_level)
-        
+        # 右边节点
         if random() < charrate:
             concat_node_i.right_concatchildnode =  makerandomtree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
@@ -334,7 +332,6 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
         return concat_node_i
         
 
-    # "foo" 字符节点
     # 生成字符节点
     if isinstance(parentnode, charnode):
         curren_level += 1
@@ -350,6 +347,7 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
         qualifiernode_i = qualifiernode(qualifiernode_str)
         return qualifiernode_i
 
+# 基因突变
 def mutate(M, U, charnode_pool, t, probchange=0.4):
     if random() < probchange:
         return makerandomtree(M, U, charnode_pool)
@@ -372,6 +370,7 @@ def mutate(M, U, charnode_pool, t, probchange=0.4):
 
         return result
 
+# 基因交叉
 def crossover(t1, t2, probswap=0.7):
     if random() < probswap:
         return deepcopy(t2)
