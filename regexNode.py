@@ -133,34 +133,34 @@ def exampletree():
         )
 
 # 深度优先遍历打印
-def printregextree(rootnode_i):
+def treeToString(rootnode_i):
     if rootnode_i is None:
         return ""
 
     if isinstance(rootnode_i, rootnode):
         finnal_regexstr = ""
-        finnal_regexstr += printregextree(rootnode_i.left_child_node)
+        finnal_regexstr += treeToString(rootnode_i.left_child_node)
         finnal_regexstr += rootnode_i.display()
-        finnal_regexstr += printregextree(rootnode_i.right_child_node)
+        finnal_regexstr += treeToString(rootnode_i.right_child_node)
         return finnal_regexstr
 
     if isinstance(rootnode_i, spliternode):
         split_regexstr = ""
-        split_regexstr += printregextree(rootnode_i.left_childnode)
+        split_regexstr += treeToString(rootnode_i.left_childnode)
         split_regexstr += rootnode_i.display()
-        split_regexstr += printregextree(rootnode_i.right_childnode)
+        split_regexstr += treeToString(rootnode_i.right_childnode)
         return split_regexstr
 
     if isinstance(rootnode_i, dotplaceholdernode):
-        return printregextree(rootnode_i.childnode)
+        return treeToString(rootnode_i.childnode)
 
     if isinstance(rootnode_i, charnode):
         return rootnode_i.display()
 
     if isinstance(rootnode_i, concat_node):
         concat_str = ""
-        concat_str += printregextree(rootnode_i.left_concatchildnode)
-        concat_str += printregextree(rootnode_i.right_concatchildnode)
+        concat_str += treeToString(rootnode_i.left_concatchildnode)
+        concat_str += treeToString(rootnode_i.right_concatchildnode)
         return concat_str
 
     if isinstance(rootnode_i, qualifiernode):

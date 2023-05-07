@@ -128,6 +128,14 @@ def regex_covers(M:set, U:set)->dict:
     wholes = {'^'+winner+'$' for winner in M} #插入头尾符号 foo -> ^foo$
     parts  = {d for w in wholes for p in subparts(w) for d in dotify(p)} # 获得替换成dot的所有可能性
     reps   = {r for p in parts for r in repetitions(p)} # 在子串集合上再进行处理，加入重复字符串集合
+    print(f"wholes:{wholes}")
+    print("==============================================")
+    print(f"parts:{parts}")
+    print("==============================================")
+    print(f"reps:{reps}")
+    print("==============================================")
+    print(f"pairs(M):{pairs(M)}")
+    print("==============================================")
     pool   = wholes | parts | pairs(M) | reps # 合并所有的字符串集合,作为可能的正则表达式集合
     searchers = {p:re.compile(p, re.MULTILINE).search for p in pool} #创建字典，key为正则表达式，value为search函数,re.MULTILINE表示多行匹配
     return {p: Set(filter(searchers[p], M))
@@ -162,7 +170,7 @@ def repetitions(part:str)->set:
     splits = [(part[:i], part[i:]) for i in range(1, len(part)+1)]
     return {A + q + B
             for (A, B) in splits
-            # Don't allow '^*' nor '$*' nor '..*' nor '.*.'
+            # 不允许产生 '^*' 、 '$*' 、 '..*' 、 '.*.'
             if not (A[-1] in '^$') #不允许在^和$后面加*,+,?这样是没有意义的
             if not A.endswith('..') #不允许在..后面加*,+,?这样是没有意义的
             if not (A.endswith('.') and B.startswith('.')) #不允许在..中间加*,+,?这样是没有意义的
@@ -203,9 +211,9 @@ def findregex(winners:set, losers:set, k:int=4, addRepetition:bool=False)->str:
         pool = {r for r in pool if matches(r, winners)}
     return OR(solution)
 
-def scorefunction(tree, M, U, w=1):
+def scoreFunc(tree, M, U, w=1):
     dif = 0
-    regex_str = printregextree(tree)
+    regex_str = treeToString(tree)
     M_cn, U_cn = 0, 0
     for s in list(M):
         try:
@@ -221,8 +229,8 @@ def scorefunction(tree, M, U, w=1):
     dif = w * (M_cn - 2*U_cn) - len(regex_str)
     return dif
 
-def rankfunction_(M, U, population):
-    scores = [(scorefunction(t, M, U), t) for t in population]
+def rankFunc(M, U, population):
+    scores = [(scoreFunc(t, M, U), t) for t in population]
     scores_ = []
     for i in scores:
         if i[1]:
@@ -230,7 +238,7 @@ def rankfunction_(M, U, population):
     scores_.sort(key=lambda x:x[0],reverse=True)
     return scores_
 
-def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate=0.5, concatrate=0.5, charrate=0.5, qualifierate=0.5, maxdepth=12, curren_level=0):
+def genRandomTree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate=0.5, concatrate=0.5, charrate=0.5, qualifierate=0.5, maxdepth=12, curren_level=0):
     """随机创建正则表达式树
 
     Args:
@@ -258,10 +266,10 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
             dotplaceholdernode(None)
         )
         # 创建左子节点后面的内容，此时左子节点以及是dot节点了
-        rootnode_i.left_child_node = makerandomtree(M, U, charnode_pool,rootnode_i.left_child_node, splitrate, concatrate, charrate,
+        rootnode_i.left_child_node = genRandomTree(M, U, charnode_pool,rootnode_i.left_child_node, splitrate, concatrate, charrate,
                                                     qualifierate, maxdepth, curren_level)
         # 创建右子节点后面的内容，此时右子节点以及是dot节点了
-        rootnode_i.right_child_node = makerandomtree(M, U, charnode_pool,rootnode_i.right_child_node, splitrate, concatrate, charrate,
+        rootnode_i.right_child_node = genRandomTree(M, U, charnode_pool,rootnode_i.right_child_node, splitrate, concatrate, charrate,
                                                      qualifierate, maxdepth, curren_level)
         return rootnode_i
 
@@ -273,15 +281,15 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
         curren_level += 1
         # "|"分裂符号
         if random() < splitrate:
-            return makerandomtree(M, U, charnode_pool,spliternode(None, None), splitrate, concatrate, charrate,
+            return genRandomTree(M, U, charnode_pool,spliternode(None, None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         # ".."合并符号
         elif random() < concatrate:
-            return makerandomtree(M, U, charnode_pool,concat_node(None, None), splitrate, concatrate, charrate,
+            return genRandomTree(M, U, charnode_pool,concat_node(None, None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         # "foo"字符
         elif random() < charrate:
-            return makerandomtree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
+            return genRandomTree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
 
     # "|" 分裂符号，分裂符号后面跟着两个dot占位符号
@@ -291,10 +299,10 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
             dotplaceholdernode(None),
             dotplaceholdernode(None)
         )
-        splitnode_i.left_childnode = makerandomtree(M, U, charnode_pool,splitnode_i.left_childnode,
+        splitnode_i.left_childnode = genRandomTree(M, U, charnode_pool,splitnode_i.left_childnode,
                                                                splitrate, concatrate, charrate, qualifierate,
                                                                maxdepth, curren_level)
-        splitnode_i.right_childnode = makerandomtree(M, U, charnode_pool,splitnode_i.right_childnode,
+        splitnode_i.right_childnode = genRandomTree(M, U, charnode_pool,splitnode_i.right_childnode,
                                                                 splitrate, concatrate, charrate, qualifierate,
                                                                 maxdepth, curren_level)
         return splitnode_i
@@ -310,24 +318,24 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
         )
         # 左边节点
         if random() < charrate:
-            concat_node_i.left_concatchildnode =  makerandomtree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
+            concat_node_i.left_concatchildnode =  genRandomTree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         elif random() < qualifierate:
-            concat_node_i.left_concatchildnode =  makerandomtree(M, U, charnode_pool,qualifiernode(None), splitrate, concatrate, charrate,
+            concat_node_i.left_concatchildnode =  genRandomTree(M, U, charnode_pool,qualifiernode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         else:
-            concat_node_i.left_concatchildnode = makerandomtree(M, U, charnode_pool,concat_node(None,None), splitrate, concatrate, charrate,
+            concat_node_i.left_concatchildnode = genRandomTree(M, U, charnode_pool,concat_node(None,None), splitrate, concatrate, charrate,
                                     qualifierate, maxdepth, curren_level)
         # 右边节点
         if random() < charrate:
-            concat_node_i.right_concatchildnode =  makerandomtree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
+            concat_node_i.right_concatchildnode =  genRandomTree(M, U, charnode_pool,charnode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         # ".+?"
         elif random() < qualifierate:
-            concat_node_i.right_concatchildnode =  makerandomtree(M, U, charnode_pool,qualifiernode(None), splitrate, concatrate, charrate,
+            concat_node_i.right_concatchildnode =  genRandomTree(M, U, charnode_pool,qualifiernode(None), splitrate, concatrate, charrate,
                                   qualifierate, maxdepth, curren_level)
         else:
-            concat_node_i.right_concatchildnode = makerandomtree(M, U, charnode_pool,concat_node(None,None), splitrate, concatrate, charrate,
+            concat_node_i.right_concatchildnode = genRandomTree(M, U, charnode_pool,concat_node(None,None), splitrate, concatrate, charrate,
                                     qualifierate, maxdepth, curren_level)
         return concat_node_i
         
@@ -350,7 +358,7 @@ def makerandomtree(M, U, charnode_pool,parentnode=rootnode(None,None), splitrate
 # 基因突变
 def mutate(M, U, charnode_pool, t, probchange=0.4):
     if random() < probchange:
-        return makerandomtree(M, U, charnode_pool)
+        return genRandomTree(M, U, charnode_pool)
     else:
         result = deepcopy(t)
         # 如果节点是cat节点，根据一定的概率决定是否随机用一颗新树代替
@@ -390,20 +398,20 @@ def crossover(t1, t2, probswap=0.7):
 
     return result 
 
-def evolve(M, U, charnode_pool, popsize=128, rankfunction=rankfunction_, maxgen=500, mutationrate=0.6, probswap=0.5, pexp=0.3, pnew=0.8):
+def evolve(M, U, charnode_pool, popsize=128, rankfunction=rankFunc, maxgen=500, mutationrate=0.6, probswap=0.5, pexp=0.3, pnew=0.8):
     # probexp：表示在构造新种群时，”选择评价较低的程序“这一概率的递减比例。该值越大，相应的筛选过程就越严格，即只选择评价最高的多少比例的个体作为复制对象
     # probexp表示选取的标准，如果probexp很小，那么我们选择的范围就很大
     def selectindex():
         return int(log(random()) / log(pexp))
 
     # 创建128个初始的种群
-    population = [makerandomtree(M, U, charnode_pool) for i in range(popsize)]
+    population = [genRandomTree(M, U, charnode_pool) for i in range(popsize)]
     scores = []
     # 产生500代
     for i in tqdm(range(maxgen)):
         # 计算种群得分
         scores = rankfunction(M, U, population)
-        # print("evole round: {0}, top score: {1}, regex_str: {2}".format(i, scores[0][0], printregextree(scores[0][1])))
+        # print("evole round: {0}, top score: {1}, regex_str: {2}".format(i, scores[0][0], treeToString(scores[0][1])))
         # 每次取种群的20%进行延续
         # newpop = [scores[0][1], scores[1][1]]
         newpop = [x[1] for x in scores[:int(len(scores)*0.2)]]
@@ -425,7 +433,7 @@ def evolve(M, U, charnode_pool, popsize=128, rankfunction=rankfunction_, maxgen=
                 )
             else:
                 # 添加随机的新树
-                new_tree = makerandomtree(M, U, charnode_pool)
+                new_tree = genRandomTree(M, U, charnode_pool)
                 newpop.append(new_tree)
 
         population = newpop
@@ -450,12 +458,19 @@ if __name__ == '__main__':
     
     # exampletree = exampletree()
     # print(exampletree)
-    # print(printregextree(exampletree))
+    # print(treeToString(exampletree))
 
-    # rd1 = makerandomtree(M, U, parentnode=rootnode(None, None), splitrate=0.5, concatrate=0.5, charrate=0.5,
+    # rd1 = genRandomTree(M, U, parentnode=rootnode(None, None), splitrate=0.5, concatrate=0.5, charrate=0.5,
     #                      qualifierate=0.5, maxdepth=12, curren_level=0)
     # print(rd1)
-    # print(printregextree(rd1))
-    charnode_pool = list(regex_parts(M1, U1))
-    res = evolve(M1,U1,charnode_pool)
-    print(res)
+    # print(treeToString(rd1))
+    pattern = input()
+    if pattern == "GA":
+        charnode_pool = list(regex_parts(M1, U1))
+        res = evolve(M1,U1,charnode_pool)
+        print(res)
+    elif pattern == "N":
+        res = findregex(M,U,addRepetition=True)
+        print(res)
+    else:
+        print("Wrong input!")
