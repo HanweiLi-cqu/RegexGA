@@ -389,6 +389,10 @@ def crossover(t1, t2, probswap=0.7):
             result.left_childnode = crossover(t1.left_childnode, t2.left_childnode, probswap)
         if hasattr(t1, 'right_childnode') and hasattr(t2, 'right_childnode'):
             result.right_childnode = crossover(t1.right_childnode, t2.right_childnode, probswap)
+        if hasattr(t1,"left_concatchildnode") and hasattr(t2,"left_concatchildnode"):
+            result.left_concatchildnode = crossover(t1.left_concatchildnode, t2.left_concatchildnode, probswap)
+        if hasattr(t1,"right_concatchildnode") and hasattr(t2,"right_concatchildnode"):
+            result.right_concatchildnode = crossover(t1.right_concatchildnode, t2.right_concatchildnode, probswap)
         if hasattr(t1, 'childnode') and hasattr(t2, 'childnode'):
             result.childnode = crossover(t1.childnode, t2.childnode, probswap)
         if hasattr(t1, 'qualifierstrig') and hasattr(t2, 'qualifierstrig'):
