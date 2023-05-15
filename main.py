@@ -128,14 +128,14 @@ def regex_covers(M:set, U:set)->dict:
     wholes = {'^'+winner+'$' for winner in M} #插入头尾符号 foo -> ^foo$
     parts  = {d for w in wholes for p in subparts(w) for d in dotify(p)} # 获得替换成dot的所有可能性
     reps   = {r for p in parts for r in repetitions(p)} # 在子串集合上再进行处理，加入重复字符串集合
-    print(f"wholes:{wholes}")
-    print("==============================================")
-    print(f"parts:{parts}")
-    print("==============================================")
-    print(f"reps:{reps}")
-    print("==============================================")
-    print(f"pairs(M):{pairs(M)}")
-    print("==============================================")
+    # print(f"wholes:{wholes}")
+    # print("==============================================")
+    # print(f"parts:{parts}")
+    # print("==============================================")
+    # print(f"reps:{reps}")
+    # print("==============================================")
+    # print(f"pairs(M):{pairs(M)}")
+    # print("==============================================")
     pool   = wholes | parts | pairs(M) | reps # 合并所有的字符串集合,作为可能的正则表达式集合
     searchers = {p:re.compile(p, re.MULTILINE).search for p in pool} #创建字典，key为正则表达式，value为search函数,re.MULTILINE表示多行匹配
     return {p: Set(filter(searchers[p], M))
@@ -225,7 +225,7 @@ def scoreFunc(tree, M, U, w=1):
     for u in list(U):
         if re.search(regex_str, u):
             U_cn += 1
-
+    # 增加negative的参数比重是为了延迟收敛
     dif = w * (M_cn - 2*U_cn) - len(regex_str)
     return dif
 
@@ -402,11 +402,11 @@ def crossover(t1, t2, probswap=0.7):
 
     return result 
 
-def evolve(M, U, charnode_pool, popsize=128, rankfunction=rankFunc, maxgen=500, mutationrate=0.6, probswap=0.5, pexp=0.3, pnew=0.8):
+def evolve(M, U, charnode_pool, popsize=128, rankfunction=rankFunc, maxgen=500, mutationrate=0.6, probswap=0.5, problow=0.3, probnew=0.8):
     # probexp：表示在构造新种群时，”选择评价较低的程序“这一概率的递减比例。该值越大，相应的筛选过程就越严格，即只选择评价最高的多少比例的个体作为复制对象
     # probexp表示选取的标准，如果probexp很小，那么我们选择的范围就很大
     def selectindex():
-        return int(log(random()) / log(pexp))
+        return int(log(random()) / log(problow))
 
     # 创建128个初始的种群
     population = [genRandomTree(M, U, charnode_pool) for i in range(popsize)]
@@ -423,7 +423,7 @@ def evolve(M, U, charnode_pool, popsize=128, rankfunction=rankFunc, maxgen=500, 
         # 产生下一代种群
         # probnew：表示在构造新种群时，”引入一个全新的随机程序“的概率，该参数和probexp是”种群多样性“的重要决定参数
         while len(newpop) < popsize:
-            if random() < pnew:
+            if random() < probnew:
                 newpop.append(
                     mutate(
                         M, U, charnode_pool,
